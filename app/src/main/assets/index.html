@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>قبله‌نما</title>
+<meta name="theme-color" content="#0f1b2b">
+<style>
+  :root{
+    --bg-top:#0f1b2b;
+    --bg-bottom:#132a3d;
+    --gold:#d4af37;
+    --gold-soft:#e8c766;
+    --text:#f2ead2;
+    --text-dim:#a9b8c4;
+    --ring:#1c3348;
+    --ring-line:#2c4a63;
+    --danger:#e0745a;
+    --ok:#7fbf7f;
+    --card:#132537;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;height:100%;
+    background:radial-gradient(circle at 50% 20%, var(--bg-bottom), var(--bg-top));
+    color:var(--text);
+    font-family:"Vazirmatn","Tahoma",system-ui,sans-serif;
+    overflow-x:hidden;
+  }
+  .wrap{
+    min-height:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:24px 16px 40px;
+    text-align:center;
+  }
+  h1{
+    font-size:20px;
+    font-weight:700;
+    margin:4px 0 2px;
+    color:var(--gold-soft);
+    letter-spacing:0.5px;
+  }
+  .subtitle{
+    font-size:12.5px;
+    color:var(--text-dim);
+    margin:0 0 18px;
+    max-width:320px;
+    line-height:1.7;
+  }
+  .status-card{
+    width:100%;
+    max-width:360px;
+    background:var(--card);
+    border:1px solid var(--ring-line);
+    border-radius:14px;
+    padding:12px 14px;
+    margin-bottom:20px;
+    font-size:13px;
+    color:var(--text-dim);
+    line-height:1.9;
+    display:none;
+  }
+  .status-card.show{display:block;}
+  .status-card b{color:var(--text);}
+  .status-row{display:flex;justify-content:space-between;gap:8px;}
+  .badge{
+    display:inline-block;
+    padding:1px 8px;
+    border-radius:20px;
+    font-size:11px;
+    font-weight:600;
+  }
+  .badge.ok{background:rgba(127,191,127,0.15);color:var(--ok);}
+  .badge.bad{background:rgba(224,116,90,0.15);color:var(--danger);}
+  .badge.wait{background:rgba(212,175,55,0.15);color:var(--gold-soft);}
+
+  .compass-area{
+    position:relative;
+    width:min(78vw, 320px);
+    height:min(78vw, 320px);
+    margin:6px 0 18px;
+  }
+  .ring{
+    position:absolute;inset:0;
+    border-radius:50%;
+    background:
+      radial-gradient(circle at 50% 50%, rgba(212,175,55,0.06), transparent 60%),
+      var(--ring);
+    border:1px solid var(--ring-line);
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.35), 0 8px 30px rgba(0,0,0,0.4);
+    transition: transform 0.15s linear;
+  }
+  .ring .tick{
+    position:absolute;
+    left:50%;top:50%;
+    width:2px;height:10px;
+    background:var(--ring-line);
+    transform-origin:1px 0;
+  }
+  .ring .tick.major{
+    height:16px;
+    width:2.5px;
+    background:var(--text-dim);
+  }
+  .ring .dir-label{
+    position:absolute;
+    left:50%;top:50%;
+    font-size:14px;
+    font-weight:700;
+    color:var(--text-dim);
+    width:24px;
+    height:24px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transform-origin:12px 100px;
+    font-family:system-ui,sans-serif;
+  }
+  .ring .dir-label.N{color:var(--gold-soft);}
+
+  .needle{
+    position:absolute;
+    left:50%;top:50%;
+    width:0;height:0;
+    transform:translate(-50%,-50%);
+    transition: transform 0.15s ease-out;
+    z-index:5;
+  }
+  .kaaba-pointer{
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform-origin:0 0;
+  }
+  .kaaba-pointer .line{
+    position:absolute;
+    left:-1px;
+    bottom:0;
+    width:2px;
+    background:linear-gradient(to top, var(--gold), rgba(212,175,55,0));
+  }
+  .kaaba-icon{
+    position:absolute;
+    left:50%;
+    transform:translate(-50%,-50%);
+    font-size:26px;
+    filter:drop-shadow(0 0 6px rgba(212,175,55,0.6));
+  }
+  .center-dot{
+    position:absolute;left:50%;top:50%;
+    width:10px;height:10px;
+    background:var(--gold-soft);
+    border-radius:50%;
+    transform:translate(-50%,-50%);
+    box-shadow:0 0 10px rgba(212,175,55,0.7);
+    z-index:6;
+  }
+  .n-marker{
+    position:absolute;
+    left:50%;top:6px;
+    transform:translateX(-50%);
+    font-size:12px;
+    font-weight:800;
+    color:var(--danger);
+    z-index:4;
+  }
+
+  .aligned-glow{
+    position:absolute;inset:-4px;
+    border-radius:50%;
+    box-shadow:0 0 0 0 rgba(127,191,127,0);
+    transition: box-shadow 0.3s ease;
+    pointer-events:none;
+  }
+  .aligned-glow.on{
+    box-shadow:0 0 0 6px rgba(127,191,127,0.25), 0 0 35px 6px rgba(127,191,127,0.35);
+  }
+
+  .readout{
+    display:flex;
+    gap:10px;
+    margin-bottom:18px;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  .pill{
+    background:var(--card);
+    border:1px solid var(--ring-line);
+    border-radius:12px;
+    padding:8px 14px;
+    min-width:110px;
+  }
+  .pill .label{font-size:11px;color:var(--text-dim);margin-bottom:2px;}
+  .pill .value{font-size:17px;font-weight:700;color:var(--text);}
+  .pill .value.gold{color:var(--gold-soft);}
+
+  .align-msg{
+    font-size:14px;
+    font-weight:700;
+    min-height:20px;
+    margin-bottom:14px;
+    transition:color 0.2s;
+  }
+  .align-msg.ok{color:var(--ok);}
+  .align-msg.close{color:var(--gold-soft);}
+  .align-msg.far{color:var(--text-dim);}
+
+  button{
+    background:linear-gradient(180deg, var(--gold-soft), var(--gold));
+    color:#1a1408;
+    border:none;
+    border-radius:12px;
+    padding:13px 22px;
+    font-size:15px;
+    font-weight:700;
+    cursor:pointer;
+    margin:6px 4px;
+    box-shadow:0 4px 14px rgba(212,175,55,0.25);
+  }
+  button:active{transform:scale(0.98);}
+  button.secondary{
+    background:transparent;
+    color:var(--text-dim);
+    border:1px solid var(--ring-line);
+    box-shadow:none;
+    font-weight:600;
+    font-size:13px;
+    padding:10px 16px;
+  }
+
+  .footnote{
+    margin-top:22px;
+    font-size:11.5px;
+    color:var(--text-dim);
+    max-width:320px;
+    line-height:1.9;
+    opacity:0.85;
+  }
+  .hidden{display:none !important;}
+
+  .calib-hint{
+    font-size:12px;
+    color:var(--gold-soft);
+    margin-bottom:10px;
+    min-height:16px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🕋 قبله‌نما</h1>
+  <p class="subtitle">با استفاده از قطب‌نمای گوشی و موقعیت‌یاب، بدون نیاز به اینترنت. کافیست GPS گوشی روشن باشد.</p>
+
+  <div id="startArea">
+    <button id="startBtn">درخواست دسترسی و شروع</button>
+    <div class="footnote">با فشردن دکمه، مرورگر دو پاپ‌آپ برای اجازهٔ «موقعیت مکانی» و «حرکت/جهت‌یابی» نشان می‌دهد. روی هر دو Allow بزنید. این اطلاعات فقط داخل همین صفحه و روی گوشی شما پردازش می‌شود و به‌جایی ارسال نمی‌شود.</div>
+    <div id="permDeniedBox" class="footnote hidden" style="color:var(--danger);"></div>
+  </div>
+
+  <div id="statusCard" class="status-card">
+    <div class="status-row"><span>موقعیت مکانی (GPS)</span><span id="gpsBadge" class="badge wait">در انتظار…</span></div>
+    <div class="status-row"><span>سنسور قطب‌نما</span><span id="compassBadge" class="badge wait">در انتظار…</span></div>
+  </div>
+
+  <div id="mainArea" class="hidden">
+    <div class="calib-hint" id="calibHint"></div>
+    <div class="compass-area">
+      <div class="aligned-glow" id="glow"></div>
+      <div class="ring" id="ring">
+        <div class="n-marker">N</div>
+      </div>
+      <div class="kaaba-pointer" id="kaabaPointer">
+        <div class="line" id="kaabaLine" style="height:0px;"></div>
+        <div class="kaaba-icon" id="kaabaIcon" style="top:0px;">🕋</div>
+      </div>
+      <div class="center-dot"></div>
+    </div>
+
+    <div class="align-msg far" id="alignMsg">در حال محاسبه…</div>
+
+    <div class="readout">
+      <div class="pill">
+        <div class="label">جهت قبله (از شمال)</div>
+        <div class="value gold" id="qiblaVal">--°</div>
+      </div>
+      <div class="pill">
+        <div class="label">جهتی که رو به آن هستید</div>
+        <div class="value" id="headingVal">--°</div>
+      </div>
+      <div class="pill">
+        <div class="label">فاصله تا مکه</div>
+        <div class="value" id="distVal">-- کیلومتر</div>
+      </div>
+    </div>
+
+    <button class="secondary" id="recalibBtn">کالیبره کردن مجدد قطب‌نما</button>
+  </div>
+
+  <div class="footnote" id="errorBox"></div>
+</div>
+
+<script>
+(function(){
+  const KAABA_LAT = 21.4225;
+  const KAABA_LNG = 39.8262;
+
+  const startBtn = document.getElementById('startBtn');
+  const startArea = document.getElementById('startArea');
+  const statusCard = document.getElementById('statusCard');
+  const gpsBadge = document.getElementById('gpsBadge');
+  const compassBadge = document.getElementById('compassBadge');
+  const mainArea = document.getElementById('mainArea');
+  const ring = document.getElementById('ring');
+  const kaabaPointer = document.getElementById('kaabaPointer');
+  const kaabaLine = document.getElementById('kaabaLine');
+  const kaabaIcon = document.getElementById('kaabaIcon');
+  const glow = document.getElementById('glow');
+  const alignMsg = document.getElementById('alignMsg');
+  const qiblaVal = document.getElementById('qiblaVal');
+  const headingVal = document.getElementById('headingVal');
+  const distVal = document.getElementById('distVal');
+  const errorBox = document.getElementById('errorBox');
+  const calibHint = document.getElementById('calibHint');
+  const recalibBtn = document.getElementById('recalibBtn');
+  const permDeniedBox = document.getElementById('permDeniedBox');
+
+  let qiblaBearing = null;
+  let currentHeading = null;
+  let usingAbsolute = false;
+  let orientationListenerAttached = false;
+
+  function toRad(d){return d*Math.PI/180;}
+  function toDeg(r){return r*180/Math.PI;}
+
+  function computeQibla(lat, lng){
+    const phiK = toRad(KAABA_LAT);
+    const lambdaK = toRad(KAABA_LNG);
+    const phi = toRad(lat);
+    const lambda = toRad(lng);
+    const y = Math.sin(lambdaK - lambda);
+    const x = Math.cos(phi)*Math.tan(phiK) - Math.sin(phi)*Math.cos(lambdaK - lambda);
+    let brng = toDeg(Math.atan2(y, x));
+    return (brng + 360) % 360;
+  }
+
+  function haversineKm(lat1, lon1, lat2, lon2){
+    const R = 6371;
+    const dLat = toRad(lat2-lat1);
+    const dLon = toRad(lon2-lon1);
+    const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+    const c = 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R*c;
+  }
+
+  // build tick marks
+  const radius = 150; // matches viewBox-ish scale, will be repositioned via CSS transform-origin using percentages instead
+  function buildTicks(){
+    const size = ring.getBoundingClientRect().width || 300;
+    const R = size/2;
+    for(let deg=0; deg<360; deg+=10){
+      const tick = document.createElement('div');
+      tick.className = 'tick' + (deg % 30 === 0 ? ' major' : '');
+      tick.style.transform = `translate(-1px,0) rotate(${deg}deg)`;
+      ring.appendChild(tick);
+    }
+    const dirs = [
+      {label:'شمال', deg:0, cls:'N'},
+      {label:'شرق', deg:90, cls:''},
+      {label:'جنوب', deg:180, cls:''},
+      {label:'غرب', deg:270, cls:''}
+    ];
+  }
+
+  function positionKaaba(){
+    const area = document.querySelector('.compass-area');
+    const size = area.getBoundingClientRect().width || 300;
+    const R = size/2 - 24;
+    kaabaLine.style.height = (R-14) + 'px';
+    kaabaIcon.style.top = (-(R-14) - 10) + 'px';
+  }
+
+  function render(){
+    if(qiblaBearing === null || currentHeading === null) return;
+    // rotate the whole ring opposite to heading so North marker etc rotate realistically
+    ring.style.transform = `rotate(${-currentHeading}deg)`;
+    // kaaba pointer rotates by (qiblaBearing - heading) relative to screen-up
+    const rel = ((qiblaBearing - currentHeading) % 360 + 360) % 360;
+    kaabaPointer.style.transform = `translate(-50%,-50%) rotate(${rel}deg)`;
+
+    headingVal.textContent = Math.round(currentHeading) + '°';
+    let diff = Math.abs(rel);
+    if(diff > 180) diff = 360 - diff;
+
+    if(diff <= 5){
+      alignMsg.textContent = '✔ رو به قبله‌اید';
+      alignMsg.className = 'align-msg ok';
+      glow.classList.add('on');
+    } else if(diff <= 20){
+      alignMsg.textContent = 'نزدیک است، کمی بچرخید';
+      alignMsg.className = 'align-msg close';
+      glow.classList.remove('on');
+    } else {
+      alignMsg.textContent = 'گوشی را بچرخانید تا فلش به سمت کعبه بایستد';
+      alignMsg.className = 'align-msg far';
+      glow.classList.remove('on');
+    }
+  }
+
+  function handleOrientation(e){
+    let heading;
+    if(typeof e.webkitCompassHeading === 'number' && !isNaN(e.webkitCompassHeading)){
+      // iOS: already gives compass heading (0 = North), no need to invert
+      heading = e.webkitCompassHeading;
+      usingAbsolute = true;
+    } else if(e.absolute && typeof e.alpha === 'number'){
+      heading = 360 - e.alpha;
+      usingAbsolute = true;
+    } else if(typeof e.alpha === 'number'){
+      heading = 360 - e.alpha;
+      usingAbsolute = false;
+    } else {
+      return;
+    }
+    currentHeading = (heading + 360) % 360;
+    compassBadge.textContent = usingAbsolute ? 'فعال' : 'فعال (بدون تراز مطلق)';
+    compassBadge.className = 'badge ok';
+    calibHint.textContent = usingAbsolute ? '' : 'برای دقت بیشتر گوشی را به شکل ۸ چند بار در هوا بچرخانید.';
+    render();
+  }
+
+  function attachOrientationListener(){
+    if(orientationListenerAttached) return;
+    const eventName = 'ondeviceorientationabsolute' in window ? 'deviceorientationabsolute' : 'deviceorientation';
+    window.addEventListener(eventName, handleOrientation, true);
+    orientationListenerAttached = true;
+    setTimeout(()=>{
+      if(currentHeading === null){
+        compassBadge.textContent = 'یافت نشد';
+        compassBadge.className = 'badge bad';
+        errorBox.textContent = 'سنسور قطب‌نما در این دستگاه یا مرورگر در دسترس نیست. لطفاً از مرورگر پیش‌فرض گوشی (Safari یا Chrome) استفاده کنید و مطمئن شوید سنسورهای حرکتی روشن‌اند.';
+      }
+    }, 2500);
+  }
+
+  function requestOrientationPermission(){
+    if(typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function'){
+      DeviceOrientationEvent.requestPermission().then(function(state){
+        if(state === 'granted'){
+          attachOrientationListener();
+        } else {
+          compassBadge.textContent = 'اجازه داده نشد';
+          compassBadge.className = 'badge bad';
+          errorBox.textContent = 'دسترسی به سنسور قطب‌نما رد شد. برای فعال‌سازی، در تنظیمات مرورگر اجازه دسترسی به «Motion & Orientation» را بدهید.';
+        }
+      }).catch(function(){
+        attachOrientationListener();
+      });
+    } else {
+      attachOrientationListener();
+    }
+  }
+
+  function startLocating(){
+    gpsBadge.textContent = 'در حال دریافت…';
+    gpsBadge.className = 'badge wait';
+
+    if(!navigator.geolocation){
+      gpsBadge.textContent = 'در دسترس نیست';
+      gpsBadge.className = 'badge bad';
+      errorBox.textContent = 'مرورگر شما از موقعیت‌یابی پشتیبانی نمی‌کند.';
+      return;
+    }
+
+    navigator.geolocation.watchPosition(function(pos){
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      qiblaBearing = computeQibla(lat, lng);
+      qiblaVal.textContent = Math.round(qiblaBearing) + '°';
+      const km = haversineKm(lat, lng, KAABA_LAT, KAABA_LNG);
+      distVal.textContent = Math.round(km).toLocaleString('fa-IR') + ' کیلومتر';
+      gpsBadge.textContent = 'فعال';
+      gpsBadge.className = 'badge ok';
+      mainArea.classList.remove('hidden');
+      render();
+    }, function(err){
+      gpsBadge.textContent = 'خطا';
+      gpsBadge.className = 'badge bad';
+      let msg = 'دریافت موقعیت مکانی ناموفق بود.';
+      if(err.code === 1) msg = 'دسترسی به موقعیت مکانی رد شد. روی آیکون قفل/اطلاعات کنار آدرس سایت در کروم بزنید، Permissions یا Site settings را باز کنید و Location را Allow کنید، سپس صفحه را رفرش کنید.';
+      if(err.code === 2) msg = 'موقعیت مکانی در دسترس نیست. مطمئن شوید GPS گوشی روشن است.';
+      if(err.code === 3) msg = 'دریافت موقعیت مکانی زمان‌بر شد؛ دوباره تلاش کنید.';
+      errorBox.textContent = msg;
+    }, {
+      enableHighAccuracy:true,
+      maximumAge:2000,
+      timeout:15000
+    });
+  }
+
+  function showPermDenied(msg){
+    permDeniedBox.textContent = msg;
+    permDeniedBox.classList.remove('hidden');
+  }
+
+  async function checkAndRequestPermissions(){
+    permDeniedBox.classList.add('hidden');
+
+    // Check geolocation permission state up front when supported
+    if(navigator.permissions && navigator.permissions.query){
+      try{
+        const geoStatus = await navigator.permissions.query({name:'geolocation'});
+        if(geoStatus.state === 'denied'){
+          showPermDenied('دسترسی به موقعیت مکانی قبلاً رد شده. برای ادامه، در تنظیمات مرورگر (site settings) برای همین صفحه، Location را روی Allow بگذارید و دوباره تلاش کنید.');
+          return false;
+        }
+      }catch(e){ /* permissions API may not support this name on all browsers */ }
+    }
+    return true;
+  }
+
+  startBtn.addEventListener('click', async function(){
+    const ok = await checkAndRequestPermissions();
+    if(!ok) return;
+
+    startArea.classList.add('hidden');
+    statusCard.classList.add('show');
+    buildTicks();
+    positionKaaba();
+    // Order matters: request location first (clearer single dialog),
+    // then orientation right after so both prompts appear back to back.
+    startLocating();
+    requestOrientationPermission();
+  });
+
+
+  recalibBtn.addEventListener('click', function(){
+    calibHint.textContent = 'گوشی را چند بار به شکل عدد ۸ در هوا بچرخانید…';
+    setTimeout(()=>{ if(usingAbsolute) calibHint.textContent=''; }, 3000);
+  });
+
+  window.addEventListener('resize', positionKaaba);
+})();
+</script>
+</body>
+</html>
