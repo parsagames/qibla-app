@@ -354,8 +354,7 @@
     return R*c;
   }
 
-  // build tick marks
-  const radius = 150; // matches viewBox-ish scale, will be repositioned via CSS transform-origin using percentages instead
+  const radius = 150;
   function buildTicks(){
     const size = ring.getBoundingClientRect().width || 300;
     const R = size/2;
@@ -365,12 +364,6 @@
       tick.style.transform = `translate(-1px,0) rotate(${deg}deg)`;
       ring.appendChild(tick);
     }
-    const dirs = [
-      {label:'شمال', deg:0, cls:'N'},
-      {label:'شرق', deg:90, cls:''},
-      {label:'جنوب', deg:180, cls:''},
-      {label:'غرب', deg:270, cls:''}
-    ];
   }
 
   function positionKaaba(){
@@ -383,9 +376,7 @@
 
   function render(){
     if(qiblaBearing === null || currentHeading === null) return;
-    // rotate the whole ring opposite to heading so North marker etc rotate realistically
     ring.style.transform = `rotate(${-currentHeading}deg)`;
-    // kaaba pointer rotates by (qiblaBearing - heading) relative to screen-up
     const rel = ((qiblaBearing - currentHeading) % 360 + 360) % 360;
     kaabaPointer.style.transform = `translate(-50%,-50%) rotate(${rel}deg)`;
 
@@ -411,7 +402,6 @@
   function handleOrientation(e){
     let heading;
     if(typeof e.webkitCompassHeading === 'number' && !isNaN(e.webkitCompassHeading)){
-      // iOS: already gives compass heading (0 = North), no need to invert
       heading = e.webkitCompassHeading;
       usingAbsolute = true;
     } else if(e.absolute && typeof e.alpha === 'number'){
@@ -441,7 +431,7 @@
         compassBadge.className = 'badge bad';
         errorBox.textContent = 'سنسور قطب‌نما در این دستگاه یا مرورگر در دسترس نیست. لطفاً از مرورگر پیش‌فرض گوشی (Safari یا Chrome) استفاده کنید و مطمئن شوید سنسورهای حرکتی روشن‌اند.';
       }
-    }, 2500);
+    }, 20000);
   }
 
   function requestOrientationPermission(){
@@ -495,7 +485,7 @@
     }, {
       enableHighAccuracy:true,
       maximumAge:2000,
-      timeout:15000
+      timeout:20000
     });
   }
 
@@ -507,7 +497,6 @@
   async function checkAndRequestPermissions(){
     permDeniedBox.classList.add('hidden');
 
-    // Check geolocation permission state up front when supported
     if(navigator.permissions && navigator.permissions.query){
       try{
         const geoStatus = await navigator.permissions.query({name:'geolocation'});
@@ -515,7 +504,7 @@
           showPermDenied('دسترسی به موقعیت مکانی قبلاً رد شده. برای ادامه، در تنظیمات مرورگر (site settings) برای همین صفحه، Location را روی Allow بگذارید و دوباره تلاش کنید.');
           return false;
         }
-      }catch(e){ /* permissions API may not support this name on all browsers */ }
+      }catch(e){ }
     }
     return true;
   }
@@ -528,12 +517,9 @@
     statusCard.classList.add('show');
     buildTicks();
     positionKaaba();
-    // Order matters: request location first (clearer single dialog),
-    // then orientation right after so both prompts appear back to back.
     startLocating();
     requestOrientationPermission();
   });
-
 
   recalibBtn.addEventListener('click', function(){
     calibHint.textContent = 'گوشی را چند بار به شکل عدد ۸ در هوا بچرخانید…';
