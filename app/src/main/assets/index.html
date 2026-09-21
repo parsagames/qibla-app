@@ -104,22 +104,6 @@
     width:2.5px;
     background:var(--text-dim);
   }
-  .ring .dir-label{
-    position:absolute;
-    left:50%;top:50%;
-    font-size:14px;
-    font-weight:700;
-    color:var(--text-dim);
-    width:24px;
-    height:24px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    transform-origin:12px 100px;
-    font-family:system-ui,sans-serif;
-  }
-  .ring .dir-label.N{color:var(--gold-soft);}
-
   .needle{
     position:absolute;
     left:50%;top:50%;
@@ -330,6 +314,7 @@
   let currentHeading = null;
   let usingAbsolute = false;
   let orientationListenerAttached = false;
+  let useGpsHeadingFallback = false;
 
   function toRad(d){return d*Math.PI/180;}
   function toDeg(r){return r*180/Math.PI;}
@@ -354,10 +339,8 @@
     return R*c;
   }
 
-  const radius = 150;
   function buildTicks(){
     const size = ring.getBoundingClientRect().width || 300;
-    const R = size/2;
     for(let deg=0; deg<360; deg+=10){
       const tick = document.createElement('div');
       tick.className = 'tick' + (deg % 30 === 0 ? ' major' : '');
@@ -427,9 +410,10 @@
     orientationListenerAttached = true;
     setTimeout(()=>{
       if(currentHeading === null){
-        compassBadge.textContent = 'یافت نشد';
-        compassBadge.className = 'badge bad';
-        errorBox.textContent = 'سنسور قطب‌نما در این دستگاه یا مرورگر در دسترس نیست. لطفاً از مرورگر پیش‌فرض گوشی (Safari یا Chrome) استفاده کنید و مطمئن شوید سنسورهای حرکتی روشن‌اند.';
+        useGpsHeadingFallback = true;
+        compassBadge.textContent = 'در حال استفاده از GPS';
+        compassBadge.className = 'badge wait';
+        calibHint.textContent = 'سنسور قطب‌نما پیدا نشد. لطفاً چند قدم مستقیم راه بروید تا جهت شما با GPS تشخیص داده شود.';
       }
     }, 20000);
   }
@@ -473,6 +457,20 @@
       gpsBadge.textContent = 'فعال';
       gpsBadge.className = 'badge ok';
       mainArea.classList.remove('hidden');
+
+      if(useGpsHeadingFallback){
+        const heading = pos.coords.heading;
+        const speed = pos.coords.speed;
+        if(typeof heading === 'number' && !isNaN(heading) && typeof speed === 'number' && speed > 0.4){
+          currentHeading = heading;
+          compassBadge.textContent = 'فعال (GPS حرکتی)';
+          compassBadge.className = 'badge ok';
+          calibHint.textContent = '';
+        } else {
+          calibHint.textContent = 'در حال حرکت مستقیم ادامه دهید تا جهت شما تشخیص داده شود…';
+        }
+      }
+
       render();
     }, function(err){
       gpsBadge.textContent = 'خطا';
@@ -530,4 +528,4 @@
 })();
 </script>
 </body>
-</html>
+  </html>
